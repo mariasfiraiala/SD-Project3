@@ -52,6 +52,12 @@ struct List {
     ListNode* head;
 };
 
+int compareTreeNodes(void *node, void *name);
+
+List *list_create();
+void list_add_first_node(List *list, void *info);
+ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*,void*));
+void list_free(List *list, void (*free_data)(void*));
 
 void ls(TreeNode* currentNode, char* arg);
 void pwd(TreeNode* treeNode);

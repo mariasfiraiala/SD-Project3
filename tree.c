@@ -7,19 +7,78 @@
 #define NO_ARG ""
 #define PARENT_DIR ".."
 
-
-FileTree createFileTree(char* rootFolderName)
+int compareTreeNodes(void *node, void *name)
 {
-    FileTree new;
+    return strcmp(((TreeNode *)node)->name, name);
+}
 
-    new.root = malloc(sizeof(TreeNode));
-    DIE(!new.root, "malloc() failed\n");
+List *list_create()
+{
+    List *new_list = malloc(sizeof(List));
+    DIE(!new_list, "malloc failed!\n");
 
-    new.root->name = strdup(rootFolderName);
-    new.root->content = new.root->parent = NULL;
-    new.root->type = FOLDER_NODE;
+    new_list->head = NULL;
+    return new_list;
+}
 
-    return new;
+void list_add_first_node(List *list, void *info) {
+    DIE(!list, "Uninitialised list!\n");
+
+    ListNode *new_node = malloc(sizeof(ListNode));
+
+    DIE(!new_node, "malloc failed!\n");
+
+    new_node->info = info;
+
+    new_node->next = list->head;
+    list->head = new_node;
+
+}
+
+ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*,void*)) {
+    DIE(!list, "Uninitialised list!\n");
+
+    ListNode *removed;
+    ListNode *current = list->head;
+
+    while (current && cmp(current->info, info) != 0)
+        current = current->next;
+
+    if (!current)
+        return NULL;
+
+    removed = current;
+
+    if (removed = list->head)
+        list->head = removed->next;
+
+    return removed;
+}
+
+void list_free(List *list, void (*free_data)(void*)) {
+    ListNode *current = list->head;
+    ListNode *removed = current;
+
+    while (current) {
+        current = current->next;
+        free_data(removed->info);
+        free(removed);
+        removed = current;
+    }
+}
+
+FileTree createFileTree(char* rootFolderName) {
+    FileTree new_FileTree;
+
+    new_FileTree.root = malloc(sizeof(TreeNode));
+    DIE(!new_FileTree.root, "malloc() failed\n");
+
+    new_FileTree.root->name = strdup(rootFolderName);
+    new_FileTree.root->content = list_create();
+    new_FileTree.root->parent = NULL;
+    new_FileTree.root->type = FOLDER_NODE;
+
+    return new_FileTree;
 }
 
 // rmrec pe root
@@ -79,7 +138,19 @@ void rmdir(TreeNode* currentNode, char* folderName) {
 
 // add first
 void touch(TreeNode* currentNode, char* fileName, char* fileContent) {
-    // TODO
+    TreeNode new_file;
+
+    new_file.parent = currentNode;
+
+    new_file.name = strdup(fileName);
+
+    new_file.type = FILE_NODE;
+    
+    new_file.content = malloc(strlen(fileContent) + 1);
+    DIE(!new_file.content, "malloc failed!\n");
+    memcpy(new_file.content, fileContent, strlen(fileContent) + 1);
+
+    list_add_first_node((List *)(currentNode->content), &new_file);
 }
 
 // deep copy
