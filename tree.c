@@ -81,7 +81,48 @@ void list_free(List *list, void (*free_data)(void*)) {
     }
 }
 
-FileTree createFileTree(char* rootFolderName) {
+TreeNode *search_path(TreeNode *treeNode, char *path)
+{
+    TreeNode *target = treeNode;
+    char *token;
+    token = strtok(path, "/");
+
+    // impart path-ul in directoare cu strtok
+    while (token) {
+        // daca directorul curent refera parintele, verific daca ma pot muta in parinte
+        if (!strcmp(token, "..")) {
+            if (target->parent)
+                target= target->parent;
+            return NULL;
+        }
+
+        // daca acum nodul a devenit NULL nu e valida calea
+        if (!target)
+            return NULL;
+
+        // ma uit printre copiii folderului, cautand numele directorului in care trebuie sa ma mut
+        FolderContent *folder = (FolderContent *)target->content;
+        ListNode *node = folder->children->head;
+
+        int ok = 0;
+        while (node && !ok) {
+            if (!strcmp(node->info->name, token)) {
+                target = node;
+                ok = 1;
+            }
+            node = node->next;
+        }
+        if (!ok)
+            return NULL;
+               
+        token = strtok(NULL, path);
+    }
+
+    return target;
+}
+
+FileTree createFileTree(char* rootFolderName)
+{
     FileTree new_FileTree;
 
     new_FileTree.root = malloc(sizeof(TreeNode));
@@ -115,8 +156,16 @@ void pwd(TreeNode* treeNode) {
 }
 
 // parsare strtok
-TreeNode* cd(TreeNode* currentNode, char* path) {
-    // TODO
+TreeNode* cd(TreeNode* currentNode, char* path)
+{
+    TreeNode *target = search_path(currentNode, path);
+
+    if (!target) {
+        printf("cd: no such file or directory: %s\n", path);
+        return currentNode;
+    }
+
+    return target;
 }
 
 // helper function cu argument pentru cate directoare si fisiere am traversat
@@ -151,7 +200,8 @@ void rmdir(TreeNode* currentNode, char* folderName) {
 }
 
 // add first
-void touch(TreeNode* currentNode, char* fileName, char* fileContent) {
+void touch(TreeNode* currentNode, char* fileName, char* fileContent)
+{
     TreeNode new_file;
 
     new_file.parent = currentNode;
