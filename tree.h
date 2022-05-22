@@ -2,6 +2,16 @@
 #define NO_ARG ""
 #define PARENT_DIR ".."
 
+
+#define DIE(assertion, call_description)                                       \
+    do {                                                                       \
+        if (assertion) {                                                       \
+            fprintf(stderr, "(%s, %d): ", __FILE__, __LINE__);                 \
+            perror(call_description);                                          \
+            exit(errno);                                                       \
+        }                                                                      \
+    } while (0)
+
 typedef struct FileContent FileContent;
 typedef struct FolderContent FolderContent;
 typedef struct TreeNode TreeNode;
@@ -54,5 +64,5 @@ void rmrec(TreeNode* currentNode, char* resourceName);
 void touch(TreeNode* currentNode, char* fileName, char* fileContent);
 void cp(TreeNode* currentNode, char* source, char* destination);
 void mv(TreeNode* currentNode, char* source, char* destination);
-FileTree createFileTree();
-void freeTree(FileTree fileTree);
+FileTree *createFileTree();
+void freeTree(FileTree **fileTree);
