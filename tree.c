@@ -55,6 +55,20 @@ ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*,void*)) {
     return removed;
 }
 
+int list_find_node(List *list, void *info, int (*cmp)(void*,void*)) {
+    DIE(!list, "Uninitialised list!\n");
+
+    ListNode *current = list->head;
+
+    while (current && cmp(current->info, info) != 0)
+        current = current->next;
+
+    if (!current)
+        return 0;
+
+    return 1;
+}
+
 void list_free(List *list, void (*free_data)(void*)) {
     ListNode *current = list->head;
     ListNode *removed = current;
