@@ -57,7 +57,11 @@ int compareTreeNodes(void *node, void *name);
 List *list_create();
 void list_add_first_node(List *list, void *info);
 ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*,void*));
+ListNode *list_get_node(List *list, void *info, int (*cmp)(void*,void*));
+int list_find_node(List *list, void *info, int (*cmp)(void*,void*));
 void list_free(List *list, void (*free_data)(void*));
+
+void show_tree(TreeNode *currentNode, int level, int *no_dir, int *no_files);
 
 void ls(TreeNode* currentNode, char* arg);
 void pwd(TreeNode* treeNode);

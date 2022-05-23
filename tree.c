@@ -69,6 +69,17 @@ int list_find_node(List *list, void *info, int (*cmp)(void*,void*)) {
     return 1;
 }
 
+ListNode *list_get_node(List *list, void *info, int (*cmp)(void*,void*)) {
+    DIE(!list, "Uninitialised list!\n");
+
+    ListNode *current = list->head;
+
+    while (current && cmp(current->info, info) != 0)
+        current = current->next;
+
+    return current;
+}
+
 void list_free(List *list, void (*free_data)(void*)) {
     ListNode *current = list->head;
     ListNode *removed = current;
@@ -136,10 +147,26 @@ FileTree createFileTree(char* rootFolderName)
     return new_FileTree;
 }
 
-// rmrec pe root
 void freeTree(FileTree fileTree)
 {
+    TreeNode *root = fileTree.root;
+    ListNode *current = ((List *)(root->content))->head;
 
+    ListNode *second_removed;
+    
+    while (current) {
+        rmrec(root, current->info->name);
+        second_removed = list_remove_node((List *)(root->content), current->info->name, compareTreeNodes);
+        free(second_removed->info->name);
+        free(second_removed->info->content);
+        free(second_removed->info);
+        free(second_removed);
+        current = ((List *)(root->content))->head;
+    }
+
+    free(root->name);
+    free(root->content);
+    free(root);
 }
 
 // functie recursiva helper
@@ -180,7 +207,21 @@ void ls(TreeNode* currentNode, char* arg)
 // strcat intre nume director curent si cel de pe nivelul superior
 // recursiv
 void pwd(TreeNode* treeNode) {
-    // TODO
+    char *path_name = NULL;
+    char *concatenate_name;
+    
+    TreeNode *current = treeNode;
+    while (current) {
+        if (!path_name)
+            concatenate_name = strcat("/", path_name);
+
+        concatenate_name = strcat(current->name, path_name);
+        free(path_name);
+        strcpy(path_name, concatenate_name);
+        current = current->parent;
+    }
+
+    printf("%s\n", path_name);
 }
 
 // parsare strtok
@@ -196,10 +237,41 @@ TreeNode* cd(TreeNode* currentNode, char* path)
     return target;
 }
 
+void show_tree(TreeNode *currentNode, int level, int *no_dir, int *no_files) {
+    if (!currentNode)
+        return;
+
+    for (int i = 0; i < level; i++)
+        printf("\t");
+
+    printf("%s\n", currentNode->name);
+
+    if (currentNode->type == FOLDER_NODE)
+        (*no_dir)++;
+    else
+        (*no_files)++;
+
+    ListNode *current = ((List *)(currentNode->content))->head;
+
+    while (current) {
+        show_tree(current->info, level + 1, no_dir, no_files);
+        current = current->next;
+    }
+}
+
 // helper function cu argument pentru cate directoare si fisiere am traversat
 // + nr de TAB-uri pentru afisare (asta este nivelul)
 void tree(TreeNode* currentNode, char* arg) {
-    // TODO
+    TreeNode *ground_node = currentNode;
+    
+    if (arg)
+        ground_node = cd(currentNode, arg);
+
+    int no_directories = 0, no_files = 0;
+
+    show_tree(ground_node, 0, &no_directories, &no_files);
+
+    printf("%d directories, %d files\n", no_directories, no_files);
 }
 
 // add first
@@ -220,12 +292,53 @@ void mkdir(TreeNode* currentNode, char* folderName)
 // verificare daca exista cu functia de find
 // free pe lista
 void rmrec(TreeNode* currentNode, char* resourceName) {
-    // TODO
+    ListNode *removed = list_get_node((List *)(currentNode->content), resourceName, compareTreeNodes);
+
+    if (!removed) {
+        printf("rmrec: failed to remove '%s': No such file or directory\n", resourceName);
+        return;
+    }
+
+    ListNode *current = ((List *)(removed->info->content))->head;
+    ListNode *second_removed;
+    
+    while (current) {
+        rmrec(removed->info, current->info->name);
+        second_removed = list_remove_node((List *)(removed->info->content),
+                            current->info->name, compareTreeNodes);
+        free(second_removed->info->name);
+        free(second_removed->info->content);
+        free(second_removed->info);
+        free(second_removed);
+        current = ((List *)(removed->info->content))->head;
+    }
+
+    free(removed->info->name);
+    free(removed->info->content);
+    free(removed->info);
+    free(removed);
 }
 
 // analog cu rmdir dar pe fisiere
 void rm(TreeNode* currentNode, char* fileName) {
-    // TODO
+    ListNode *removed = list_get_node((List *)(currentNode->content), fileName, compareTreeNodes);
+    
+    if (!removed) {
+        printf("rm: failed to remove '%s': No such file or directory\n", fileName);
+        return;
+    }
+
+    if (removed->info->type == FOLDER_NODE) {
+        printf("rm: cannot remove '%s': Is a directory\n", fileName);
+        return;
+    }
+
+    removed = list_remove_node((List *)(currentNode->content), fileName, compareTreeNodes);
+    
+    free(removed->info->content);
+    free(removed->info->name);
+    free(removed->info);
+    free(removed);
 }
 
 // o simpla verficare daca directorul e gol
@@ -261,6 +374,10 @@ void cp(TreeNode* currentNode, char* source, char* destination) {
 // add_node la destinatie cu nodul pe care il mutam
 // remove_node din lista initiala
 void mv(TreeNode* currentNode, char* source, char* destination) {
-    // TODO
+    TreeNode *dest_node = cd(currentNode, destination);
+    ListNode *displaced_node = list_get_node((List *)(currentNode->content), source, compareTreeNodes);
+    list_add_first_node((List *)(dest_node->content), displaced_node->info);
+    displaced_node = list_remove_node((List *)(currentNode->content), source, compareTreeNodes);
+    free(displaced_node);
 }
 
