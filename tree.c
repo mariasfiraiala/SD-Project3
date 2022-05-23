@@ -163,7 +163,7 @@ void ls(TreeNode* currentNode, char* arg)
             printf("ls: cannot access '%s': No such file or directory\n", arg);
         else {
             if (target->type == FILE_NODE)
-                printf("%s: %s\n", target->name, target->content);
+                printf("%s: %s\n", target->name, (char *)target->content);
             else {
                 FolderContent *folder = (FolderContent *)target->content;
                 ListNode *node = folder->children->head;
