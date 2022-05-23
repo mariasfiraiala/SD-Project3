@@ -49,7 +49,7 @@ ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*,void*)) {
 
     removed = current;
 
-    if (removed = list->head)
+    if (removed == list->head)
         list->head = removed->next;
 
     return removed;
@@ -140,7 +140,8 @@ FileTree createFileTree(char* rootFolderName)
     DIE(!new_FileTree.root, "malloc() failed\n");
 
     new_FileTree.root->name = strdup(rootFolderName);
-    new_FileTree.root->content = list_create();
+    new_FileTree.root->content = malloc(sizeof(FolderContent));
+    ((FolderContent *)new_FileTree.root->content)->children = list_create();
     new_FileTree.root->parent = NULL;
     new_FileTree.root->type = FOLDER_NODE;
 
@@ -150,21 +151,15 @@ FileTree createFileTree(char* rootFolderName)
 void freeTree(FileTree fileTree)
 {
     TreeNode *root = fileTree.root;
-    ListNode *current = ((List *)(root->content))->head;
-
-    ListNode *second_removed;
+    ListNode *current = ((FolderContent*)(root->content))->children->head;
     
     while (current) {
         rmrec(root, current->info->name);
-        second_removed = list_remove_node((List *)(root->content), current->info->name, compareTreeNodes);
-        free(second_removed->info->name);
-        free(second_removed->info->content);
-        free(second_removed->info);
-        free(second_removed);
-        current = ((List *)(root->content))->head;
+        current = ((FolderContent*)(root->content))->children->head;
     }
 
     free(root->name);
+    free(((FolderContent*)(root->content))->children);
     free(root->content);
     free(root);
 }
@@ -251,7 +246,7 @@ void show_tree(TreeNode *currentNode, int level, int *no_dir, int *no_files) {
     else
         (*no_files)++;
 
-    ListNode *current = ((List *)(currentNode->content))->head;
+    ListNode *current = ((FolderContent *)(currentNode->content))->children->head;
 
     while (current) {
         show_tree(current->info, level + 1, no_dir, no_files);
@@ -283,7 +278,7 @@ void mkdir(TreeNode* currentNode, char* folderName)
     FolderContent *folder = (FolderContent *)currentNode->content;
 
     if (list_find_node(folder->children, folderName, compareTreeNodes)) {
-        printf("mkdir: cannot create directory '%s': File already exists\n");
+        printf("mkdir: cannot create directory '%s': File already exists\n", folderName);
         return;
     }
 
@@ -298,28 +293,37 @@ void mkdir(TreeNode* currentNode, char* folderName)
 // verificare daca exista cu functia de find
 // free pe lista
 void rmrec(TreeNode* currentNode, char* resourceName) {
-    ListNode *removed = list_get_node((List *)(currentNode->content), resourceName, compareTreeNodes);
+    ListNode *removed = list_get_node(((FolderContent *)(currentNode->content))->children, resourceName, compareTreeNodes);
 
     if (!removed) {
         printf("rmrec: failed to remove '%s': No such file or directory\n", resourceName);
         return;
     }
 
-    ListNode *current = ((List *)(removed->info->content))->head;
+    removed = list_remove_node(((FolderContent *)(currentNode->content))->children, resourceName, compareTreeNodes);
+
+    ListNode *current = ((FolderContent *)(removed->info->content))->children->head;
     ListNode *second_removed;
     
     while (current) {
         rmrec(removed->info, current->info->name);
-        second_removed = list_remove_node((List *)(removed->info->content),
+        second_removed = list_remove_node(((FolderContent *)(removed->info->content))->children,
                             current->info->name, compareTreeNodes);
         free(second_removed->info->name);
+        
+        if (second_removed->info->type == FOLDER_NODE)
+            free(((FolderContent*)(second_removed->info->content))->children);
+        else
+            free(((FileContent*)(second_removed->info->content))->text);
+
         free(second_removed->info->content);
         free(second_removed->info);
         free(second_removed);
-        current = ((List *)(removed->info->content))->head;
+        current = ((FolderContent *)(removed->info->content))->children->head;
     }
 
     free(removed->info->name);
+    free(((FolderContent*)(removed->info->content))->children);
     free(removed->info->content);
     free(removed->info);
     free(removed);
@@ -327,7 +331,7 @@ void rmrec(TreeNode* currentNode, char* resourceName) {
 
 // analog cu rmdir dar pe fisiere
 void rm(TreeNode* currentNode, char* fileName) {
-    ListNode *removed = list_get_node((List *)(currentNode->content), fileName, compareTreeNodes);
+    ListNode *removed = list_get_node(((FolderContent *)(currentNode->content))->children, fileName, compareTreeNodes);
     
     if (!removed) {
         printf("rm: failed to remove '%s': No such file or directory\n", fileName);
@@ -339,8 +343,9 @@ void rm(TreeNode* currentNode, char* fileName) {
         return;
     }
 
-    removed = list_remove_node((List *)(currentNode->content), fileName, compareTreeNodes);
+    removed = list_remove_node(((FolderContent *)(currentNode->content))->children, fileName, compareTreeNodes);
     
+    free(((FileContent*)(removed->info->content))->text);
     free(removed->info->content);
     free(removed->info->name);
     free(removed->info);
@@ -370,7 +375,7 @@ void touch(TreeNode* currentNode, char* fileName, char* fileContent)
 
     ((FileContent *)(new_file.content))->text = strdup(fileContent);
 
-    list_add_first_node((List *)(currentNode->content), &new_file);
+    list_add_first_node(((FolderContent *)(currentNode->content))->children, &new_file);
 }
 
 // deep copy
@@ -382,9 +387,9 @@ void cp(TreeNode* currentNode, char* source, char* destination) {
 // remove_node din lista initiala
 void mv(TreeNode* currentNode, char* source, char* destination) {
     TreeNode *dest_node = cd(currentNode, destination);
-    ListNode *displaced_node = list_get_node((List *)(currentNode->content), source, compareTreeNodes);
-    list_add_first_node((List *)(dest_node->content), displaced_node->info);
-    displaced_node = list_remove_node((List *)(currentNode->content), source, compareTreeNodes);
+    ListNode *displaced_node = list_get_node(((FolderContent *)(currentNode->content))->children, source, compareTreeNodes);
+    list_add_first_node(((FolderContent *)(dest_node->content))->children, displaced_node->info);
+    displaced_node = list_remove_node(((FolderContent *)(currentNode->content))->children, source, compareTreeNodes);
     free(displaced_node);
 }
 
