@@ -205,8 +205,16 @@ void tree(TreeNode* currentNode, char* arg) {
 // add first
 // verficam daca directorul exista deja, daca nu, il cream
 // altfel afisam mesaj de eroare
-void mkdir(TreeNode* currentNode, char* folderName) {
-    // TODO
+void mkdir(TreeNode* currentNode, char* folderName)
+{
+    TreeNode new_dir;
+
+    new_dir.parent = currentNode;
+    new_dir.name = strdup(folderName);
+    new_dir.type = FOLDER_NODE;
+    new_dir.content = list_create();
+
+    list_add_first_node((List *)(currentNode), &new_dir);
 }
 
 // verificare daca exista cu functia de find
