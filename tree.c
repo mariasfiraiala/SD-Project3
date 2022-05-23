@@ -365,9 +365,10 @@ void touch(TreeNode* currentNode, char* fileName, char* fileContent)
 
     new_file.type = FILE_NODE;
     
-    new_file.content = malloc(strlen(fileContent) + 1);
+    new_file.content = malloc(sizeof(FileContent));
     DIE(!new_file.content, "malloc failed!\n");
-    memcpy(new_file.content, fileContent, strlen(fileContent) + 1);
+
+    ((FileContent *)(new_file.content))->text = strdup(fileContent);
 
     list_add_first_node((List *)(currentNode->content), &new_file);
 }
