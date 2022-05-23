@@ -107,7 +107,7 @@ TreeNode *search_path(TreeNode *treeNode, char *path)
         int ok = 0;
         while (node && !ok) {
             if (!strcmp(node->info->name, token)) {
-                target = node;
+                target = node->info;
                 ok = 1;
             }
             node = node->next;
@@ -145,8 +145,36 @@ void freeTree(FileTree fileTree)
 // functie recursiva helper
 // folosim strtok pana cand argumentul final e NULL
 // cand nu avem argument, verificam in ls (functia mama si afisam direct)
-void ls(TreeNode* currentNode, char* arg) {
-    // TODO
+void ls(TreeNode* currentNode, char* arg)
+{
+    if (!arg) {
+        FolderContent *folder = (FolderContent *)currentNode->content;
+        ListNode *node = folder->children->head;
+
+        while (node) {
+            printf("%s\n", node->info->name);
+            node = node->next;
+        }
+    }
+
+    else {
+        TreeNode *target = search_path(currentNode, arg);
+        if (!target)
+            printf("ls: cannot access '%s': No such file or directory\n", arg);
+        else {
+            if (target->type == FILE_NODE)
+                printf("%s: %s\n", target->name, target->content);
+            else {
+                FolderContent *folder = (FolderContent *)target->content;
+                ListNode *node = folder->children->head;
+
+                while (node) {
+                    printf("%s\n", node->info->name);
+                    node = node->next;
+                }
+            }
+        }
+    }
 }
 
 // strcat intre nume director curent si cel de pe nivelul superior
