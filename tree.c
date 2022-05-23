@@ -280,6 +280,12 @@ void tree(TreeNode* currentNode, char* arg) {
 void mkdir(TreeNode* currentNode, char* folderName)
 {
     TreeNode new_dir;
+    FolderContent *folder = (FolderContent *)currentNode->content;
+
+    if (list_find_node(folder->children, folderName, compareTreeNodes)) {
+        printf("mkdir: cannot create directory '%s': File already exists\n");
+        return;
+    }
 
     new_dir.parent = currentNode;
     new_dir.name = strdup(folderName);
