@@ -28,7 +28,8 @@ void list_add_first_node(List *list, void *info) {
 
     DIE(!new_node, "malloc failed!\n");
 
-    new_node->info = info;
+    new_node->info = malloc(sizeof(TreeNode));
+    memcpy(new_node->info, info, sizeof(TreeNode));
 
     new_node->next = list->head;
     list->head = new_node;
@@ -41,16 +42,17 @@ ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*,void*)) {
     ListNode *removed;
     ListNode *current = list->head;
 
-    while (current && cmp(current->info, info) != 0)
+    if (cmp(current->info, info)) {
+        list->head = current->next;
+        return current;
+    }
+
+    while (current->next && cmp(current->next->info, info) != 0)
         current = current->next;
 
-    if (!current)
-        return NULL;
+    removed = current->next;
 
-    removed = current;
-
-    if (removed == list->head)
-        list->head = removed->next;
+    current->next = removed->next;
 
     return removed;
 }
@@ -170,7 +172,7 @@ void freeTree(FileTree fileTree)
 void ls(TreeNode* currentNode, char* arg)
 {
     if (!arg) {
-        FolderContent *folder = (FolderContent *)currentNode->content;
+        FolderContent *folder = (FolderContent *)(currentNode->content);
         ListNode *node = folder->children->head;
 
         while (node) {
@@ -202,21 +204,42 @@ void ls(TreeNode* currentNode, char* arg)
 // strcat intre nume director curent si cel de pe nivelul superior
 // recursiv
 void pwd(TreeNode* treeNode) {
-    char *path_name = NULL;
-    char *concatenate_name;
-    
-    TreeNode *current = treeNode;
-    while (current) {
-        if (!path_name)
-            concatenate_name = strcat("/", path_name);
+    char *path_name = malloc(sizeof(char));
+    path_name[0] = '\0';
 
-        concatenate_name = strcat(current->name, path_name);
-        free(path_name);
-        strcpy(path_name, concatenate_name);
+    char *aux_string;
+
+    int length = 0;
+
+    TreeNode *current = treeNode;
+
+    while (current) {
+        aux_string = malloc(length + strlen(current->name) + 1);
+        memcpy(aux_string, current->name, strlen(current->name) + 1);
+
+        strcat(aux_string, path_name);
+
+        length = strlen(aux_string);
+
         current = current->parent;
+
+        free(path_name);
+
+        if (current) {
+            path_name = malloc(length + 2);
+            path_name[0] = '/';
+            memcpy(path_name + 1, aux_string, length + 1);
+        } else {
+            path_name = malloc(length + 1);
+            memcpy(path_name, aux_string, length + 1);
+        }
+
+        free(aux_string);
+
     }
 
     printf("%s\n", path_name);
+    free(path_name);
 }
 
 // parsare strtok
@@ -285,9 +308,10 @@ void mkdir(TreeNode* currentNode, char* folderName)
     new_dir.parent = currentNode;
     new_dir.name = strdup(folderName);
     new_dir.type = FOLDER_NODE;
-    new_dir.content = list_create();
+    new_dir.content = malloc(sizeof(FolderContent));
+    ((FolderContent *)new_dir.content)->children = list_create(); 
 
-    list_add_first_node((List *)(currentNode), &new_dir);
+    list_add_first_node(((FolderContent *)(currentNode->content))->children, &new_dir);
 }
 
 // verificare daca exista cu functia de find
@@ -362,6 +386,10 @@ void rmdir(TreeNode* currentNode, char* folderName) {
 // add first
 void touch(TreeNode* currentNode, char* fileName, char* fileContent)
 {
+    if (list_find_node(((FolderContent *)(currentNode->content))->children,
+        fileName, compareTreeNodes))
+        return;
+
     TreeNode new_file;
 
     new_file.parent = currentNode;
