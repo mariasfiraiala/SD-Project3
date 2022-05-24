@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <string.h>
 #include "tree.h"
@@ -45,6 +46,8 @@ TreeNode* process_command(TreeNode* currentFolder,
         mv(currentFolder, cmd[1], cmd[2]);
     } else if (!strcmp(cmd[0], CP)) {
         cp(currentFolder, cmd[1], cmd[2]);
+    } else if (!strcmp(cmd[0], "exit")) {
+        return NULL;
     } else {
         printf("UNRECOGNIZED COMMAND!\n");
     }
@@ -74,6 +77,8 @@ int main() {
             token = strtok(NULL, " ");
         }
         currentFolder = process_command(currentFolder, cmd, token_idx);
+        if (!currentFolder)
+            break;
     }
 
     freeTree(fileTree);
