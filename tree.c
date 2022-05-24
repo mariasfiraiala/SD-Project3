@@ -102,6 +102,8 @@ TreeNode *search_path(TreeNode *treeNode, char *path)
 
     // impart path-ul in directoare cu strtok
     while (token) {
+        if (target->type == FILE_NODE)
+            return NULL;
         // daca directorul curent refera parintele, verific daca ma pot muta in parinte
         if (!strcmp(token, "..")) {
             if (target->parent) {
@@ -134,6 +136,9 @@ TreeNode *search_path(TreeNode *treeNode, char *path)
                
         token = strtok(NULL, "/\n");
     }
+
+    if (target->type == FILE_NODE)
+            return NULL;
 
     return target;
 }
