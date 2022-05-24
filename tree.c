@@ -98,15 +98,19 @@ TreeNode *search_path(TreeNode *treeNode, char *path)
 {
     TreeNode *target = treeNode;
     char *token;
-    token = strtok(path, "/");
+    token = strtok(path, "/\n");
 
     // impart path-ul in directoare cu strtok
     while (token) {
         // daca directorul curent refera parintele, verific daca ma pot muta in parinte
         if (!strcmp(token, "..")) {
-            if (target->parent)
+            if (target->parent) {
                 target= target->parent;
-            return NULL;
+                token = strtok(NULL, path);
+                continue;
+            }
+            else
+                return NULL;
         }
 
         // daca acum nodul a devenit NULL nu e valida calea
