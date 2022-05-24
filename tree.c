@@ -229,6 +229,7 @@ void pwd(TreeNode* treeNode) {
             path_name = malloc(length + 2);
             path_name[0] = '/';
             memcpy(path_name + 1, aux_string, length + 1);
+            length++;
         } else {
             path_name = malloc(length + 1);
             memcpy(path_name, aux_string, length + 1);
@@ -430,7 +431,26 @@ void touch(TreeNode* currentNode, char* fileName, char* fileContent)
 
 // deep copy
 void cp(TreeNode* currentNode, char* source, char* destination) {
-    // TODO
+    TreeNode *dest_node = cd(currentNode, destination);
+
+    if (!dest_node) {
+        printf("cp: failed to access '%s': Not a directory", destination);
+        return;
+    }
+
+    ListNode *copied_node = list_get_node(((FolderContent *)(currentNode->content))->children, source, compareTreeNodes);
+    if (copied_node->info->type == FOLDER_NODE) {
+        printf("cp: -r not specified; omitting directory '%s'\n", source);
+        return;
+    }
+
+    char *fileName = malloc(strlen(copied_node->info->name) + 1);
+    memcpy(fileName, copied_node->info->name, strlen(copied_node->info->name) + 1);
+
+    char *fileContent = malloc(strlen(((FileContent *)(copied_node->info->content))->text) + 1);
+    memcpy(fileContent,((FileContent *)(copied_node->info->content))->text, strlen(((FileContent *)(copied_node->info->content))->text) + 1);
+
+    touch(dest_node, fileName, fileContent);
 }
 
 // add_node la destinatie cu nodul pe care il mutam
@@ -438,12 +458,15 @@ void cp(TreeNode* currentNode, char* source, char* destination) {
 void mv(TreeNode* currentNode, char* source, char* destination) {
     TreeNode *dest_node = cd(currentNode, destination);
     
-    if (!dest_node)
+    if (!dest_node) {
         printf("mv: failed to access '%s': Not a directory\n", destination);
+        return;
+    }
 
     ListNode *displaced_node = list_get_node(((FolderContent *)(currentNode->content))->children, source, compareTreeNodes);
     list_add_first_node(((FolderContent *)(dest_node->content))->children, displaced_node->info);
     displaced_node = list_remove_node(((FolderContent *)(currentNode->content))->children, source, compareTreeNodes);
+    free(displaced_node->info);
     free(displaced_node);
 }
 
