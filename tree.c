@@ -106,7 +106,7 @@ TreeNode *search_path(TreeNode *treeNode, char *path)
         if (!strcmp(token, "..")) {
             if (target->parent) {
                 target= target->parent;
-                token = strtok(NULL, path);
+                token = strtok(NULL, "/\n");
                 continue;
             }
             else
@@ -132,7 +132,7 @@ TreeNode *search_path(TreeNode *treeNode, char *path)
         if (!ok)
             return NULL;
                
-        token = strtok(NULL, path);
+        token = strtok(NULL, "/\n");
     }
 
     return target;
