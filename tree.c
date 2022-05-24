@@ -137,9 +137,6 @@ TreeNode *search_path(TreeNode *treeNode, char *path)
         token = strtok(NULL, "/\n");
     }
 
-    if (target->type == FILE_NODE)
-            return NULL;
-
     return target;
 }
 
@@ -196,7 +193,7 @@ void ls(TreeNode* currentNode, char* arg)
             printf("ls: cannot access '%s': No such file or directory\n", arg);
         else {
             if (target->type == FILE_NODE)
-                printf("%s: %s\n", target->name, (char *)target->content);
+                printf("%s: %s\n", target->name, ((FileContent *)target->content)->text);
             else {
                 FolderContent *folder = (FolderContent *)target->content;
                 ListNode *node = folder->children->head;
@@ -262,6 +259,9 @@ TreeNode* cd(TreeNode* currentNode, char* path)
         return currentNode;
     }
 
+    if (target->type == FILE_NODE) 
+        return currentNode;
+
     return target;
 }
 
@@ -296,11 +296,20 @@ void tree(TreeNode* currentNode, char* arg) {
     TreeNode *ground_node = currentNode;
     
     if (arg)
-        ground_node = cd(currentNode, arg);
+        ground_node = search_path(currentNode, arg);
 
     int no_directories = 0, no_files = 0;
 
-    show_tree(ground_node, 0, &no_directories, &no_files);
+    if (!ground_node || ground_node->type == FILE_NODE) {
+        printf("%s [error opening dir]\n\n", arg);
+    } else {
+        ListNode *current = ((FolderContent *)(ground_node->content))->children->head;
+
+        while (current) {
+            show_tree(current->info, 0, &no_directories, &no_files);
+            current = current->next;
+        }
+    }
 
     printf("%d directories, %d files\n", no_directories, no_files);
 }
@@ -314,7 +323,7 @@ void mkdir(TreeNode* currentNode, char* folderName)
     FolderContent *folder = (FolderContent *)currentNode->content;
 
     if (list_find_node(folder->children, folderName, compareTreeNodes)) {
-        printf("mkdir: cannot create directory '%s': File already exists\n", folderName);
+        printf("mkdir: cannot create directory '%s': File exists\n", folderName);
         return;
     }
 
@@ -440,24 +449,42 @@ void touch(TreeNode* currentNode, char* fileName, char* fileContent)
 
 // deep copy
 void cp(TreeNode* currentNode, char* source, char* destination) {
-    TreeNode *dest_node = cd(currentNode, destination);
+    char *buffer = malloc(strlen(destination) + 1);
+    memcpy(buffer, destination, strlen(destination) + 1);
+
+    TreeNode *dest_node = search_path(currentNode, buffer);
+    free(buffer);
 
     if (!dest_node) {
         printf("cp: failed to access '%s': Not a directory", destination);
         return;
     }
 
-    ListNode *copied_node = list_get_node(((FolderContent *)(currentNode->content))->children, source, compareTreeNodes);
-    if (copied_node->info->type == FOLDER_NODE) {
+    buffer = malloc(strlen(source) + 1);
+    memcpy(buffer, source, strlen(source) + 1);
+
+    TreeNode *copied_node = search_path(currentNode, buffer);
+    free(buffer);
+
+    if (copied_node->type == FOLDER_NODE) {
         printf("cp: -r not specified; omitting directory '%s'\n", source);
         return;
     }
 
-    char *fileName = malloc(strlen(copied_node->info->name) + 1);
-    memcpy(fileName, copied_node->info->name, strlen(copied_node->info->name) + 1);
+    if (dest_node->type == FILE_NODE) {
+        free(((FileContent *)(dest_node->content))->text);
+        ((FileContent *)(dest_node->content))->text = malloc(strlen(((FileContent *)copied_node->content)->text) + 1);
+        
+        memcpy(((FileContent *)(dest_node->content))->text,
+        ((FileContent *)copied_node->content)->text, strlen(((FileContent *)copied_node->content)->text) + 1);
+        return;
+    }
 
-    char *fileContent = malloc(strlen(((FileContent *)(copied_node->info->content))->text) + 1);
-    memcpy(fileContent,((FileContent *)(copied_node->info->content))->text, strlen(((FileContent *)(copied_node->info->content))->text) + 1);
+    char *fileName = malloc(strlen(copied_node->name) + 1);
+    memcpy(fileName, copied_node->name, strlen(copied_node->name) + 1);
+
+    char *fileContent = malloc(strlen(((FileContent *)(copied_node->content))->text) + 1);
+    memcpy(fileContent,((FileContent *)(copied_node->content))->text, strlen(((FileContent *)(copied_node->content))->text) + 1);
 
     touch(dest_node, fileName, fileContent);
 }
@@ -465,17 +492,42 @@ void cp(TreeNode* currentNode, char* source, char* destination) {
 // add_node la destinatie cu nodul pe care il mutam
 // remove_node din lista initiala
 void mv(TreeNode* currentNode, char* source, char* destination) {
-    TreeNode *dest_node = cd(currentNode, destination);
-    
-    if (!dest_node) {
+    char *buffer = malloc(strlen(destination) + 1);
+    memcpy(buffer, destination, strlen(destination) + 1);
+
+    TreeNode *dest_node = search_path(currentNode, buffer);
+    free(buffer);
+
+    buffer = malloc(strlen(source) + 1);
+    memcpy(buffer, source, strlen(source) + 1);
+
+    TreeNode *displaced_node = search_path(currentNode, buffer);
+    free(buffer);
+
+    if (!dest_node || (dest_node->type == FILE_NODE && displaced_node->type == FOLDER_NODE)) {
         printf("mv: failed to access '%s': Not a directory\n", destination);
         return;
     }
 
-    ListNode *displaced_node = list_get_node(((FolderContent *)(currentNode->content))->children, source, compareTreeNodes);
-    list_add_first_node(((FolderContent *)(dest_node->content))->children, displaced_node->info);
-    displaced_node = list_remove_node(((FolderContent *)(currentNode->content))->children, source, compareTreeNodes);
-    free(displaced_node->info);
-    free(displaced_node);
-}
+    if (dest_node->type == FILE_NODE && displaced_node->type == FILE_NODE) {
+        free(((FileContent *)(dest_node->content))->text);
+        ((FileContent *)(dest_node->content))->text = malloc(strlen(((FileContent *)displaced_node->content)->text) + 1);
+        
+        memcpy(((FileContent *)(dest_node->content))->text,
+        ((FileContent *)displaced_node->content)->text, strlen(((FileContent *)displaced_node->content)->text) + 1);
+    } else {
+        list_add_first_node(((FolderContent *)(dest_node->content))->children, displaced_node);
+    }
 
+    ListNode *removed = list_remove_node(((FolderContent *)(displaced_node->parent->content))->children, displaced_node->name, compareTreeNodes);
+    displaced_node->parent = dest_node;
+
+    if (dest_node->type == FILE_NODE) {
+        free(removed->info->name);
+        free(((FileContent *)(removed->info->content))->text);
+        free(removed->info->content);
+    }
+
+    free(removed->info);
+    free(removed);
+}
