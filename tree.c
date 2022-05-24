@@ -141,7 +141,7 @@ FileTree createFileTree(char* rootFolderName)
     new_FileTree.root = malloc(sizeof(TreeNode));
     DIE(!new_FileTree.root, "malloc() failed\n");
 
-    new_FileTree.root->name = strdup(rootFolderName);
+    new_FileTree.root->name = rootFolderName;
     new_FileTree.root->content = malloc(sizeof(FolderContent));
     ((FolderContent *)new_FileTree.root->content)->children = list_create();
     new_FileTree.root->parent = NULL;
@@ -309,7 +309,7 @@ void mkdir(TreeNode* currentNode, char* folderName)
     }
 
     new_dir.parent = currentNode;
-    new_dir.name = strdup(folderName);
+    new_dir.name = folderName;
     new_dir.type = FOLDER_NODE;
     new_dir.content = malloc(sizeof(FolderContent));
     ((FolderContent *)new_dir.content)->children = list_create(); 
@@ -335,6 +335,7 @@ void rmrec(TreeNode* currentNode, char* resourceName) {
         free(removed->info->content);
         free(removed->info);
         free(removed);
+        return;
     }
 
     ListNode *current = ((FolderContent *)(removed->info->content))->children->head;
@@ -415,14 +416,14 @@ void touch(TreeNode* currentNode, char* fileName, char* fileContent)
 
     new_file.parent = currentNode;
 
-    new_file.name = strdup(fileName);
+    new_file.name = fileName;
 
     new_file.type = FILE_NODE;
     
     new_file.content = malloc(sizeof(FileContent));
     DIE(!new_file.content, "malloc failed!\n");
 
-    ((FileContent *)(new_file.content))->text = strdup(fileContent);
+    ((FileContent *)(new_file.content))->text = fileContent;
 
     list_add_first_node(((FolderContent *)(currentNode->content))->children, &new_file);
 }
