@@ -2,7 +2,6 @@
 #define NO_ARG ""
 #define PARENT_DIR ".."
 
-
 #define DIE(assertion, call_description)                                       \
     do {                                                                       \
         if (assertion) {                                                       \
@@ -52,15 +51,34 @@ struct List {
     ListNode* head;
 };
 
-int compareTreeNodes(void *node, void *name);
+/*
+* @brief -> compares the name of a node with a given string
+* @param -> node = the node for which we do the comparison
+* @param -> name = the string with which we compare the name
+* @return -> 0 for perfect match, anything else for non matching strings
+*/
+static inline int compareTreeNodes(void *node, void *name);
 
+/*
+* @brief -> creates a list
+* @param -> none
+* @return -> the desired list
+*/
 List *list_create();
+
+/*
+* @brief -> adds a node at the beginning of a simply linked list
+* @param -> list = the data structure to be updated
+* @param -> info = the info inserted into the new node
+* @return -> none
+*/
 void list_add_first_node(List *list, void *info);
 ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*,void*));
 ListNode *list_get_node(List *list, void *info, int (*cmp)(void*,void*));
 int list_find_node(List *list, void *info, int (*cmp)(void*,void*));
 void list_free(List *list, void (*free_data)(void*));
 
+TreeNode *search_path(TreeNode *treeNode, char *path);
 void show_tree(TreeNode *currentNode, int level, int *no_dir, int *no_files);
 
 void ls(TreeNode* currentNode, char* arg);
