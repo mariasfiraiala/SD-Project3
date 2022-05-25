@@ -1,3 +1,7 @@
+//Copyright 2022 Alexandru Mihai(313CA) & Maria Sfiriala (314CA)
+#ifndef TREE_H__
+#define TREE_H__
+
 #define TREE_CMD_INDENT_SIZE 4
 #define NO_ARG ""
 #define PARENT_DIR ".."
@@ -230,3 +234,5 @@ FileTree createFileTree();
 * @return -> none
 */
 void freeTree(FileTree fileTree);
+
+#endif //  TREE_H__
