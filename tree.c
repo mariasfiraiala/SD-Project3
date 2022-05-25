@@ -525,20 +525,24 @@ void cp(TreeNode* currentNode, char* source, char* destination)
         return;
     }
 
+    FileContent *init_cont = (FileContent *)copied_node->content;
+
+    // if the file already exists, we replace the text content
     if (dest_node->type == FILE_NODE) {
-        free(((FileContent *)(dest_node->content))->text);
-        ((FileContent *)(dest_node->content))->text = malloc(strlen(((FileContent *)copied_node->content)->text) + 1);
+        FileContent *cont = (FileContent *)dest_node->content;
+
+        free(cont->text);
+        cont->text = malloc(strlen(init_cont->text) + 1);
         
-        memcpy(((FileContent *)(dest_node->content))->text,
-        ((FileContent *)copied_node->content)->text, strlen(((FileContent *)copied_node->content)->text) + 1);
+        memcpy(cont->text, init_cont->text, strlen(init_cont->text) + 1);
         return;
     }
 
     char *fileName = malloc(strlen(copied_node->name) + 1);
     memcpy(fileName, copied_node->name, strlen(copied_node->name) + 1);
 
-    char *fileContent = malloc(strlen(((FileContent *)(copied_node->content))->text) + 1);
-    memcpy(fileContent,((FileContent *)(copied_node->content))->text, strlen(((FileContent *)(copied_node->content))->text) + 1);
+    char *fileContent = malloc(strlen(init_cont->text) + 1);
+    memcpy(fileContent, init_cont->text, strlen(init_cont->text) + 1);
 
     touch(dest_node, fileName, fileContent);
 }
@@ -557,22 +561,33 @@ void mv(TreeNode* currentNode, char* source, char* destination)
     TreeNode *displaced_node = search_path(currentNode, buffer);
     free(buffer);
 
-    if (!dest_node || (dest_node->type == FILE_NODE && displaced_node->type == FOLDER_NODE)) {
+    if (!dest_node || (dest_node->type == FILE_NODE
+        && displaced_node->type == FOLDER_NODE)) {
         printf("mv: failed to access '%s': Not a directory\n", destination);
         return;
     }
 
+    // if both nodes are files, we replace the content
     if (dest_node->type == FILE_NODE && displaced_node->type == FILE_NODE) {
-        free(((FileContent *)(dest_node->content))->text);
-        ((FileContent *)(dest_node->content))->text = malloc(strlen(((FileContent *)displaced_node->content)->text) + 1);
+        FileContent *cont = (FileContent *)dest_node->content;
+        FileContent *init_cont = (FileContent *)displaced_node->content;
+
+        free(cont->text);
+        cont->text = malloc(strlen(init_cont->text) + 1);
         
-        memcpy(((FileContent *)(dest_node->content))->text,
-        ((FileContent *)displaced_node->content)->text, strlen(((FileContent *)displaced_node->content)->text) + 1);
+        memcpy(cont->text, init_cont->text, strlen(init_cont->text) + 1);
     } else {
-        list_add_first_node(((FolderContent *)(dest_node->content))->children, displaced_node);
+        FolderContent *cont = (FolderContent *)dest_node->content;
+        list_add_first_node(cont->children, displaced_node);
     }
 
-    ListNode *removed = list_remove_node(((FolderContent *)(displaced_node->parent->content))->children, displaced_node->name, compareTreeNodes);
+    // removing the initial node from its list
+    FolderContent *parent_cont = 
+        (FolderContent *)displaced_node->parent->content;
+
+    ListNode *removed = list_remove_node(parent_cont->children,
+                            displaced_node->name, compareTreeNodes);
+
     displaced_node->parent = dest_node;
 
     if (dest_node->type == FILE_NODE) {
