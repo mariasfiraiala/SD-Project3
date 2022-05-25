@@ -1,4 +1,4 @@
-//Copyright 2022 Alexandru Mihai(313CA) & Maria Sfiriala (314CA)
+//Copyright 2022 Alexandru Mihai(313CA) & Maria Sfiraiala (314CA)
 #ifndef TREE_H__
 #define TREE_H__
 
