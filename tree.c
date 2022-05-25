@@ -1,3 +1,5 @@
+//Copyright 2022 Alexandru Mihai(313CA) & Maria Sfiriala (314CA)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -582,7 +584,7 @@ void mv(TreeNode* currentNode, char* source, char* destination)
     }
 
     // removing the initial node from its list
-    FolderContent *parent_cont = 
+    FolderContent *parent_cont =
         (FolderContent *)displaced_node->parent->content;
 
     ListNode *removed = list_remove_node(parent_cont->children,
