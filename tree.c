@@ -262,7 +262,6 @@ void pwd(TreeNode* treeNode)
         }
 
         free(aux_string);
-
     }
 
     printf("%s\n", path_name);
