@@ -1,4 +1,4 @@
-//Copyright 2022 Alexandru Mihai(313CA) & Maria Sfiriala (314CA)
+// Copyright 2022 Alexandru Mihai(313CA) & Maria Sfiriala (314CA)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,10 +35,9 @@ void list_add_first_node(List *list, void *info) {
 
     new_node->next = list->head;
     list->head = new_node;
-
 }
 
-ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*,void*)) {
+ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*, void*)) {
     DIE(!list, "Uninitialised list!\n");
 
     ListNode *removed;
@@ -59,7 +58,7 @@ ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*,void*)) {
     return removed;
 }
 
-int list_find_node(List *list, void *info, int (*cmp)(void*,void*)) {
+int list_find_node(List *list, void *info, int (*cmp)(void*, void*)) {
     DIE(!list, "Uninitialised list!\n");
 
     ListNode *current = list->head;
@@ -73,7 +72,7 @@ int list_find_node(List *list, void *info, int (*cmp)(void*,void*)) {
     return 1;
 }
 
-ListNode *list_get_node(List *list, void *info, int (*cmp)(void*,void*)) {
+ListNode *list_get_node(List *list, void *info, int (*cmp)(void*, void*)) {
     DIE(!list, "Uninitialised list!\n");
 
     ListNode *current = list->head;
@@ -109,10 +108,10 @@ TreeNode *search_path(TreeNode *treeNode, char *path)
             return NULL;
 
         // when we are supposed to refer the parent directory (the path
-        // is ..), we check whether we can move into the parent directory 
+        // is ..), we check whether we can move into the parent directory
         if (!strcmp(token, "..")) {
             if (target->parent) {
-                target= target->parent;
+                target = target->parent;
                 token = strtok(NULL, "/\n");
                 continue;
             }
@@ -142,7 +141,7 @@ TreeNode *search_path(TreeNode *treeNode, char *path)
         // return NULL
         if (!ok)
             return NULL;
-               
+
         token = strtok(NULL, "/\n");
     }
 
@@ -174,7 +173,7 @@ void freeTree(FileTree fileTree)
 {
     TreeNode *root = fileTree.root;
     ListNode *current = ((FolderContent*)(root->content))->children->head;
-    
+
     while (current) {
         rmrec(root, current->info->name);
         current = ((FolderContent*)(root->content))->children->head;
@@ -198,14 +197,12 @@ void ls(TreeNode* currentNode, char* arg)
             printf("%s\n", node->info->name);
             node = node->next;
         }
-    }
-
-    else {
+    } else {
         // we verify whether the given path is valid
         TreeNode *target = search_path(currentNode, arg);
-        if (!target)
+        if (!target) {
             printf("ls: cannot access '%s': No such file or directory\n", arg);
-        else {
+        } else {
             // when the targeted node is a file, we only print its content
             if (target->type == FILE_NODE) {
                 printf("%s: %s\n", target->name,
@@ -284,7 +281,7 @@ TreeNode* cd(TreeNode* currentNode, char* path)
         return currentNode;
     }
 
-    if (target->type == FILE_NODE) 
+    if (target->type == FILE_NODE)
         return currentNode;
 
     return target;
@@ -296,7 +293,8 @@ void show_tree(TreeNode *currentNode, int level, int *no_dir, int *no_files)
         return;
 
     // for every node we'll add one more identation tab to the right
-    for (int i = 0; i < level; i++)
+    int i;
+    for (i = 0; i < level; i++)
         printf("\t");
 
     printf("%s\n", currentNode->name);
@@ -305,12 +303,14 @@ void show_tree(TreeNode *currentNode, int level, int *no_dir, int *no_files)
     if (currentNode->type == FOLDER_NODE)
         ++(*no_dir);
     else
-        ++(*no_files);
+       ++(*no_files);
 
     if (currentNode->type == FILE_NODE)
         return;
 
-    ListNode *current = ((FolderContent *)(currentNode->content))->children->head;
+    FolderContent *cont = currentNode->content;
+
+    ListNode *current = cont->children->head;
 
     // for every child of the main node, we apply the same algorithm
     while (current) {
@@ -322,7 +322,7 @@ void show_tree(TreeNode *currentNode, int level, int *no_dir, int *no_files)
 void tree(TreeNode* currentNode, char* arg)
 {
     TreeNode *ground_node = currentNode;
-    
+
     // when the there is a path, we get the folder for which we construct the
     // tree
     if (arg)
@@ -355,7 +355,8 @@ void mkdir(TreeNode* currentNode, char* folderName)
     // if the directory we want to create already exists, we print the error
     // message; we'll look for it in the current folder
     if (list_find_node(folder->children, folderName, compareTreeNodes)) {
-        printf("mkdir: cannot create directory '%s': File exists\n", folderName);
+        printf("mkdir: cannot create directory '%s': File exists\n",
+                folderName);
         return;
     }
 
@@ -405,7 +406,7 @@ void rmrec(TreeNode* currentNode, char* resourceName)
 
     ListNode *current = ((FolderContent *)(removed->info->content))->children
                         ->head;
-    
+
     while (current) {
         rmrec(removed->info, current->info->name);
         current = ((FolderContent *)(removed->info->content))->children->head;
@@ -423,7 +424,7 @@ void rm(TreeNode* currentNode, char* fileName)
     FolderContent *folder = (FolderContent *)currentNode->content;
     ListNode *removed = list_get_node(folder->children, fileName,
                                      compareTreeNodes);
-    
+
     if (!removed) {
         printf("rm: failed to remove '%s': No such file or directory\n",
               fileName);
@@ -451,7 +452,7 @@ void rmdir(TreeNode* currentNode, char* folderName)
     FolderContent *folder = (FolderContent *)currentNode->content;
     ListNode *removed = list_get_node(folder->children, folderName,
                                      compareTreeNodes);
-    
+
     if (!removed) {
         printf("rmdir: failed to remove '%s': No such file or directory\n",
               folderName);
@@ -470,7 +471,7 @@ void rmdir(TreeNode* currentNode, char* folderName)
     }
 
     removed = list_remove_node(folder->children, folderName, compareTreeNodes);
-    
+
     free(((FolderContent*)(removed->info->content))->children);
     free(removed->info->content);
     free(removed->info->name);
@@ -492,7 +493,7 @@ void touch(TreeNode* currentNode, char* fileName, char* fileContent)
     new_file.name = fileName;
 
     new_file.type = FILE_NODE;
-    
+
     new_file.content = malloc(sizeof(FileContent));
     DIE(!new_file.content, "malloc failed!\n");
 
@@ -535,7 +536,7 @@ void cp(TreeNode* currentNode, char* source, char* destination)
 
         free(cont->text);
         cont->text = malloc(strlen(init_cont->text) + 1);
-        
+
         memcpy(cont->text, init_cont->text, strlen(init_cont->text) + 1);
         return;
     }
@@ -576,7 +577,7 @@ void mv(TreeNode* currentNode, char* source, char* destination)
 
         free(cont->text);
         cont->text = malloc(strlen(init_cont->text) + 1);
-        
+
         memcpy(cont->text, init_cont->text, strlen(init_cont->text) + 1);
     } else {
         FolderContent *cont = (FolderContent *)dest_node->content;
