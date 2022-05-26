@@ -117,10 +117,3 @@ echo "tests = ${total}/80";
 echo "total = $(( $total + $CODING_STYLE_BONUS ))/90";
 
 make clean &> /dev/null
-if [ $total -ne 90 ]; then 
-	exit 1
-else
-	exit 0
-fi
-
-
