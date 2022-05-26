@@ -1,4 +1,4 @@
-//Copyright 2022 Alexandru Mihai(313CA) & Maria Sfiraiala (314CA)
+// Copyright 2022 Alexandru Mihai(313CA) & Maria Sfiriala (314CA)
 #ifndef TREE_H__
 #define TREE_H__
 
@@ -85,7 +85,7 @@ void list_add_first_node(List *list, void *info);
 * @param -> cmp = compare function
 * @return -> the node we deleted, it is our responsibility to free its memory
 */
-ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*,void*));
+ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*, void*));
 
 /*
 * @brief -> gets a node from a simply linked list
@@ -95,7 +95,7 @@ ListNode *list_remove_node(List *list, void *info, int (*cmp)(void*,void*));
 * @return -> the node we were searching, or NULL if the info isn't present in
 *            the list
 */
-ListNode *list_get_node(List *list, void *info, int (*cmp)(void*,void*));
+ListNode *list_get_node(List *list, void *info, int (*cmp)(void*, void*));
 
 /*
 * @brief -> determines whether a value is present in a simply linked list
@@ -104,7 +104,7 @@ ListNode *list_get_node(List *list, void *info, int (*cmp)(void*,void*));
 * @param -> cmp = compare function
 * @retunr -> 1 for true, 0 for false
 */
-int list_find_node(List *list, void *info, int (*cmp)(void*,void*));
+int list_find_node(List *list, void *info, int (*cmp)(void*, void*));
 
 /*
 * @brief -> frees a simply linked list
@@ -235,4 +235,4 @@ FileTree createFileTree();
 */
 void freeTree(FileTree fileTree);
 
-#endif //  TREE_H__
+#endif  // TREE_H__

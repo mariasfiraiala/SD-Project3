@@ -1,4 +1,4 @@
-//Copyright 2022 Alexandru Mihai(313CA) & Maria Sfiraiala (314CA)
+// Copyright 2022 Alexandru Mihai(313CA) & Maria Sfiriala (314CA)
 
 #include <stdio.h>
 #include <string.h>
